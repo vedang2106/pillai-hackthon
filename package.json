@@ -1,0 +1,15 @@
+{
+  "name": "eventflow-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "EventFlow AI - Monorepo containing frontend, backend, and AI service",
+  "scripts": {
+    "dev": "npm run dev --prefix frontend",
+    "dev:frontend": "npm run dev --prefix frontend",
+    "dev:backend": "npm run dev --prefix backend",
+    "dev:ai": "cd ai-service && uvicorn app.main:app --reload --port 8000",
+    "build": "npm run build --prefix frontend",
+    "seed": "npm run seed --prefix backend",
+    "install:all": "npm install --prefix frontend && npm install --prefix backend"
+  }
+}
