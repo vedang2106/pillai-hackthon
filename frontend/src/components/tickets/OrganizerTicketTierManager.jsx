@@ -38,7 +38,7 @@ export default function OrganizerTicketTierManager({ eventId, zones = [] }) {
       .finally(() => setLoading(false));
   }, [eventId]);
 
-  function handleAddTier(e) {
+  async function handleAddTier(e) {
     e.preventDefault();
     if (!newTier.name.trim()) return;
 
@@ -63,10 +63,33 @@ export default function OrganizerTicketTierManager({ eventId, zones = [] }) {
       entryZoneId: gateZones[0]?._id || '',
       entryZoneName: gateZones[0]?.name || 'Gate 1 Main Entry',
     });
+
+    // Auto-save to DB & trigger Socket.IO live update
+    try {
+      setSaving(true);
+      const { data } = await ticketsApi.saveTiers(eventId, updated);
+      setTiers(data.tiers);
+      setMsg('✓ Ticket tier added & published live to visitors!');
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to publish ticket tier.');
+    } finally {
+      setSaving(false);
+    }
   }
 
-  function handleRemoveTier(index) {
-    setTiers(tiers.filter((_, i) => i !== index));
+  async function handleRemoveTier(index) {
+    const updated = tiers.filter((_, i) => i !== index);
+    setTiers(updated);
+    try {
+      setSaving(true);
+      const { data } = await ticketsApi.saveTiers(eventId, updated);
+      setTiers(data.tiers);
+      setMsg('✓ Ticket tier removed & updated live!');
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to update ticket tiers.');
+    } finally {
+      setSaving(false);
+    }
   }
 
   async function handleSaveTiers() {

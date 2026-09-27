@@ -47,8 +47,14 @@ export async function createZone(req, res) {
     return res.status(403).json({ message: 'Not allowed to add zones to this event' });
   }
 
-  const zoneLat = latitude != null && !isNaN(Number(latitude)) ? Number(latitude) : event.venue?.latitude ?? 19.076;
-  const zoneLng = longitude != null && !isNaN(Number(longitude)) ? Number(longitude) : event.venue?.longitude ?? 72.8777;
+  const baseLat = event.venue?.latitude ?? 19.076;
+  const baseLng = event.venue?.longitude ?? 72.8777;
+  const zoneLat = latitude != null && !isNaN(Number(latitude)) && Number(latitude) !== 0
+    ? Number(latitude)
+    : baseLat + (Math.random() - 0.5) * 0.003;
+  const zoneLng = longitude != null && !isNaN(Number(longitude)) && Number(longitude) !== 0
+    ? Number(longitude)
+    : baseLng + (Math.random() - 0.5) * 0.003;
 
   const occupancy = currentOccupancy ?? 0;
   const utilizationPercent = capacity ? Math.min(100, Math.round((occupancy / capacity) * 100)) : 0;
@@ -99,6 +105,11 @@ export async function updateZone(req, res) {
     'crowdLevel',
     'trafficLevel',
     'riskLevel',
+    'gateStatus',
+    'redirectGateId',
+    'redirectGateName',
+    'redirectNotice',
+    'gateChangeReason',
     'dataSource',
   ];
   for (const key of updatable) {

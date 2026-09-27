@@ -72,7 +72,7 @@ Open `http://localhost:5173`. Vite proxies `/api` and `/socket.io` to port 5000.
 
 ```bash
 cd ai-service
-# install dependencies if needed
+pip install -r requirements.txt
 uvicorn app.main:app --reload --port 8000
 ```
 

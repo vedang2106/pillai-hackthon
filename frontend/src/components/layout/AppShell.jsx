@@ -1,10 +1,10 @@
 import React from 'react';
 import { Link, Outlet, useNavigate } from 'react-router-dom';
-import { Zap, LogOut, ShieldCheck } from 'lucide-react';
+import { Zap, LogOut, ShieldCheck, CloudRain } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 export default function AppShell() {
-  const { user, logout, isGovernment } = useAuth();
+  const { user, logout, isOrganizer, isGovernment } = useAuth();
   const navigate = useNavigate();
 
   return (
@@ -18,6 +18,14 @@ export default function AppShell() {
               </span>
               EventFlow <span className="text-ef-primary">AI</span>
             </Link>
+            {isOrganizer && (
+              <Link
+                to="/events/677000000000000000000001"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-orange-50 text-brand-orange border border-orange-200 font-extrabold text-xs hover:bg-orange-100 transition-all"
+              >
+                <CloudRain className="w-4 h-4 text-brand-orange" /> 🌦️ Weather Digital Twin
+              </Link>
+            )}
             {isGovernment && (
               <Link
                 to="/government"

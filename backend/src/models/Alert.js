@@ -18,7 +18,7 @@ const alertSchema = new mongoose.Schema(
     },
     source: {
       type: String,
-      enum: ['AI_PREDICTION', 'GOVERNMENT_VERIFIED', 'ORGANIZER', 'USER_REPORTED', 'SIMULATED'],
+      enum: ['AI_PREDICTION', 'GOVERNMENT_VERIFIED', 'ORGANIZER', 'USER_REPORTED', 'SIMULATED', 'GUARD_SCANNER'],
       default: 'AI_PREDICTION',
     },
     status: {

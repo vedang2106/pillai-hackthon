@@ -24,7 +24,10 @@ import {
 
 import { geocodeAddress } from '../../utils/geocoder';
 
-export default function VisitorSmartNavigator({ event }) {
+export default function VisitorSmartNavigator({ event, zones = [] }) {
+  const activeRedirectGate = (zones || []).find(
+    (z) => z.gateStatus === 'DANGER' || z.gateStatus === 'CLOSED' || z.gateStatus === 'REROUTED' || z.crowdLevel === 'CRITICAL' || !!z.redirectGateName
+  );
   const mapContainerRef = useRef(null);
   const leafletMapRef = useRef(null);
   const polylineRef = useRef(null);
@@ -216,7 +219,7 @@ export default function VisitorSmartNavigator({ event }) {
 
   // Live Navigation Movement Animation Timer
   useEffect(() => {
-    if (!isNavigating || !routeResult?.waypoints?.length) {
+    if (!isNavigating) {
       if (animationTimerRef.current) clearInterval(animationTimerRef.current);
       if (liveNavMarkerRef.current) {
         liveNavMarkerRef.current.remove();
@@ -225,8 +228,23 @@ export default function VisitorSmartNavigator({ event }) {
       return;
     }
 
-    const waypoints = routeResult.waypoints;
-    const steps = routeResult.navigationSteps || [];
+    // Extract or interpolate 15 waypoints for smooth animation
+    let waypoints = routeResult?.waypoints && routeResult.waypoints.length >= 8
+      ? routeResult.waypoints
+      : [];
+
+    if (waypoints.length < 8) {
+      waypoints = [];
+      const numPts = 15;
+      for (let i = 0; i <= numPts; i++) {
+        const frac = i / numPts;
+        const lat = originLat + (destLat - originLat) * frac + Math.sin(frac * Math.PI) * 0.012;
+        const lng = originLng + (destLng - originLng) * frac + Math.sin(frac * Math.PI) * 0.006;
+        waypoints.push([roundCoord(lat), roundCoord(lng)]);
+      }
+    }
+
+    const steps = routeResult?.navigationSteps || [];
 
     loadLeaflet().then((L) => {
       const map = leafletMapRef.current;
@@ -234,16 +252,28 @@ export default function VisitorSmartNavigator({ event }) {
 
       const navIcon = L.divIcon({
         className: 'custom-leaflet-icon',
-        html: `<div style="background-color:#2563EB; width:24px; height:24px; border-radius:50%; border:3px solid white; box-shadow:0 0 12px #2563EB; display:flex; align-items:center; justify-content:center; color:white;">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg>
-               </div>`,
-        iconSize: [24, 24],
-        iconAnchor: [12, 12],
+        html: `
+          <div style="position:relative; width:32px; height:32px; display:flex; align-items:center; justify-content:center;">
+            <div style="position:absolute; width:32px; height:32px; border-radius:50%; background:#3B82F6; opacity:0.6; transform: scale(1.3);"></div>
+            <div style="background-color:#1D4ED8; width:26px; height:26px; border-radius:50%; border:3px solid white; box-shadow:0 0 14px #2563EB; display:flex; align-items:center; justify-content:center; color:white; z-index:10;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg>
+            </div>
+          </div>
+        `,
+        iconSize: [32, 32],
+        iconAnchor: [16, 16],
       });
 
       if (!liveNavMarkerRef.current) {
         liveNavMarkerRef.current = L.marker(waypoints[0], { icon: navIcon }).addTo(map);
+      } else {
+        liveNavMarkerRef.current.setIcon(navIcon);
+        liveNavMarkerRef.current.setLatLng(waypoints[0]);
       }
+
+      map.setView(waypoints[0], 14);
+
+      if (animationTimerRef.current) clearInterval(animationTimerRef.current);
 
       animationTimerRef.current = setInterval(() => {
         setSimulatedWaypointIdx((prevIdx) => {
@@ -255,26 +285,28 @@ export default function VisitorSmartNavigator({ event }) {
           }
 
           const currentCoord = waypoints[nextIdx];
-          liveNavMarkerRef.current?.setLatLng(currentCoord);
+          if (liveNavMarkerRef.current) {
+            liveNavMarkerRef.current.setLatLng(currentCoord);
+          }
           map.panTo(currentCoord, { animate: true });
 
           // Update active turn maneuver step based on progress
           const stepFrac = nextIdx / waypoints.length;
           const targetStep = Math.min(
-            Math.floor(stepFrac * steps.length),
-            steps.length - 1
+            Math.floor(stepFrac * (steps.length || 1)),
+            Math.max(0, steps.length - 1)
           );
           setCurrentStepIndex(targetStep);
 
           return nextIdx;
         });
-      }, 1200);
+      }, 850);
     });
 
     return () => {
       if (animationTimerRef.current) clearInterval(animationTimerRef.current);
     };
-  }, [isNavigating, routeResult]);
+  }, [isNavigating, routeResult, originLat, originLng, destLat, destLng]);
 
   const handleToggleNavigation = () => {
     if (isNavigating) {
@@ -406,6 +438,29 @@ export default function VisitorSmartNavigator({ event }) {
           })}
         </div>
       </div>
+
+      {/* Live Organizer Gate Reroute Alert Banner */}
+      {activeRedirectGate && (
+        <div className="bg-rose-600 text-white border border-rose-700 rounded-2xl p-4 flex items-start gap-3 shadow-md animate-pulse">
+          <AlertTriangle className="w-5 h-5 text-amber-300 shrink-0 mt-0.5" />
+          <div className="space-y-1 text-xs">
+            <div className="font-extrabold text-white uppercase tracking-wide flex items-center gap-2">
+              <span>🚨 ORGANIZER GATE REROUTE DIRECTIVE ACTIVE</span>
+              <span className="bg-white text-rose-700 text-[10px] px-2 py-0.5 rounded-full font-black">
+                GATE STATUS: {activeRedirectGate.gateStatus || activeRedirectGate.crowdLevel}
+              </span>
+            </div>
+            <p className="text-rose-100 leading-relaxed font-semibold">
+              {activeRedirectGate.redirectNotice || `${activeRedirectGate.name} is in Danger Zone / Heavy Congestion. Organizers recommend using alternate entry.`}
+            </p>
+            {activeRedirectGate.redirectGateName && (
+              <p className="text-amber-300 font-extrabold text-xs pt-0.5">
+                🔀 New Assigned Entry Point: {activeRedirectGate.redirectGateName}
+              </p>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Government Advisory Compliance Banner */}
       {routeResult?.isVehicleRestricted || routeResult?.restrictedRoads?.length > 0 ? (

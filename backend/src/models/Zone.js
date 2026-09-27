@@ -46,6 +46,15 @@ const zoneSchema = new mongoose.Schema(
       default: 'LOW',
     },
     utilizationPercent: { type: Number, default: 0, min: 0, max: 100 },
+    gateStatus: {
+      type: String,
+      enum: ['OPEN', 'CONGESTED', 'CLOSED', 'REROUTED', 'DANGER'],
+      default: 'OPEN',
+    },
+    redirectGateId: { type: mongoose.Schema.Types.ObjectId, ref: 'Zone', default: null },
+    redirectGateName: { type: String, default: '' },
+    redirectNotice: { type: String, default: '' },
+    gateChangeReason: { type: String, default: '' },
     dataSource: {
       type: String,
       enum: ['LIVE', 'SIMULATED', 'USER_REPORTED', 'PREDICTED', 'HISTORICAL'],

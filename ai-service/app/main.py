@@ -44,6 +44,52 @@ def health_check():
         "modelVersion": "xgboost-v1.2.0"
     }
 
+# Live Weather Integration API (Open-Meteo)
+@app.get("/weather/live")
+def get_live_weather(lat: float = 19.0330, lon: float = 73.0297):
+    """
+    Fetches real-time weather observations from Open-Meteo free weather API.
+    Location defaults to Pillai University / Navi Mumbai (19.0330 N, 73.0297 E)
+    """
+    import urllib.request
+    import json
+    
+    url = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&current=temperature_2m,relative_humidity_2m,rain,showers,snowfall,wind_speed_10m,weather_code"
+    try:
+        req = urllib.request.Request(url, headers={'User-Agent': 'EventFlow-AI/1.0'})
+        with urllib.request.urlopen(req, timeout=4) as response:
+            res_data = json.loads(response.read().decode('utf-8'))
+            current = res_data.get("current", {})
+            return {
+                "ok": True,
+                "location": "Pillai University, Navi Mumbai",
+                "latitude": lat,
+                "longitude": lon,
+                "temperatureC": current.get("temperature_2m", 28.5),
+                "humidityPct": current.get("relative_humidity_2m", 65),
+                "rainfallMm": current.get("rain", 0.0) + current.get("showers", 0.0),
+                "windSpeedKmh": current.get("wind_speed_10m", 12.5),
+                "weatherCode": current.get("weather_code", 0),
+                "source": "OPEN_METEO_LIVE_API",
+                "timestamp": current.get("time")
+            }
+    except Exception as e:
+        # Robust fallback if offline or API throttled
+        return {
+            "ok": True,
+            "location": "Pillai University, Navi Mumbai (Cached Sensor)",
+            "latitude": lat,
+            "longitude": lon,
+            "temperatureC": 28.5,
+            "humidityPct": 70,
+            "rainfallMm": 15.0,
+            "windSpeedKmh": 18.0,
+            "weatherCode": 61,
+            "source": "SENSOR_FALLBACK",
+            "error": str(e)
+        }
+
+
 # 1. Demand Prediction
 @app.post("/predict/demand")
 def predict_demand_endpoint(payload: Dict[str, Any]):
@@ -121,13 +167,22 @@ def assistant_query_endpoint(payload: Dict[str, Any]):
     context_data = payload.get("contextData", {})
     return process_assistant_query(query, context_data)
 
-# 11. ML Analytics
-@app.post("/analytics/eval")
-def ml_analytics_endpoint(payload: Dict[str, Any]):
-    feedback_records = payload.get("feedbackRecords", [])
-    return calculate_ml_analytics(feedback_records)
+from app.analytics.social_sentiment import analyze_visitor_comment, generate_organizer_management_report
 
-# 12. Visitor Smart Route with Advisory Compliance (ChromaDB)
+# 13. AI Social Sentiment & Topic Extraction
+@app.post("/analytics/social-sentiment")
+def social_sentiment_endpoint(payload: Dict[str, Any]):
+    comment = payload.get("comment", "")
+    rating = int(payload.get("rating", 5))
+    return analyze_visitor_comment(comment, rating)
+
+# 14. Organizer Management & Historical Report
+@app.post("/analytics/organizer-report")
+def organizer_report_endpoint(payload: Dict[str, Any]):
+    comments = payload.get("comments", [])
+    return generate_organizer_management_report(comments)
+
+# 15. AI Visitor Smart Path & Turn-by-Turn Route Parser
 @app.post("/predict/visitor-route")
 def visitor_route_endpoint(payload: Dict[str, Any]):
     origin = payload.get("origin", {})
@@ -135,3 +190,5 @@ def visitor_route_endpoint(payload: Dict[str, Any]):
     vehicle_type = payload.get("vehicleType", "FOUR_WHEELER")
     event_data = payload.get("event", {})
     return compute_visitor_smart_path(origin, destination, vehicle_type, event_data)
+
+

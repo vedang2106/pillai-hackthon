@@ -1,0 +1,9 @@
+rule_id,incident_type,severity_level,trigger_condition,dispatch_action,response_time_sec,escalation_protocol
+R001,CROWD_CONGESTION,HIGH,Zone utilization > 88% for 3 mins,Dispatch 4 crowd marshals to split queue; open auxiliary gate,180,Re-route 30% of incoming visitors if unresolved after 5 mins
+R002,STAMPEDE_RISK,CRITICAL,Density > 4.5 persons per sq meter,Halt all entry turnstiles; open emergency overflow gates; broadcast PA alert,30,Notify city emergency services and deployment of rapid tactical unit
+R003,MEDICAL_EMERGENCY,CRITICAL,First aid alert / collapse reported,Dispatch 2 paramedics with stretcher; clear 3-meter corridor,120,Escalate to local hospital ambulance dispatch if severe injury
+R004,INFRASTRUCTURE_FAILURE,HIGH,Barricade breach / stage instability,Evacuate 20-meter perimeter; deploy maintenance crew,90,Lock down zone access and redirect pedestrian traffic
+R005,FIRE_HAZARD,CRITICAL,Smoke sensor / fire report,Activate zone sprinklers; evacuate zone via North Exits; notify fire dept,45,Full venue evacuation broadcast if uncontained after 3 mins
+R006,UNAUTHORIZED_BREACH,MEDIUM,Perimeter fence jump,Dispatch 2 security guards to sector; inspect perimeter fence,150,Lockdown adjacent gate if intruder unapprehended
+R007,PARKING_OVERFLOW,LOW,Parking Lot A utilization > 90%,Divert incoming vehicles to Parking Lot B via digital signage,300,Activate shuttle bus service to remote parking lot
+Rule008,HEAT_EXHAUSTION,MEDIUM,Temperature > 34C & high crowd,Deploy mobile hydration stations; increase ventilation fan speed,240,Issue heat warning notification on event mobile app

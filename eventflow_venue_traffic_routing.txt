@@ -1,0 +1,22 @@
+=== EVENTFLOW AI: VENUE TRAFFIC & ROUTING SPECIFICATION ===
+
+1. ENTRY GATE BALANCING ALGORITHM
+- Rule 1: Measure real-time arrival rate (arrivals/minute) and current queue length at all active entry gates.
+- Rule 2: Calculate estimated wait time (minutes) = Queue Length / Processing Rate.
+- Rule 3: If Wait Time (Gate X) > 2 * Wait Time (Gate Y) and Distance (X to Y) < 150 meters, output directive:
+  "Reroute 35% of incoming queue from Gate X to Gate Y. Display walking directions on digital signage and mobile app."
+
+2. EGRESS WAVE & METRO TRANSPORT SYNCHRONIZATION
+- Wave 1 (Minutes 0 to 15 post-event): Release Main Hall North Exit (30% total crowd).
+- Wave 2 (Minutes 15 to 30 post-event): Release Main Hall South Exit (35% total crowd).
+- Wave 3 (Minutes 30 to 45 post-event): Release Balcony & VIP Exits (35% total crowd).
+- Target Metro Capacity: Maximum 1,200 passengers per 10-minute train cycle. If platform occupancy exceeds 80%, hold exit gates at venue perimeter for 5 minutes.
+
+3. SHUTTLE BUS DISPATCH TRIGGERS
+- Baseline Shuttle Count: 6 active buses operating on a 10-minute loop.
+- Surge Trigger: When bus terminal queue exceeds 250 people, automatically dispatch 4 standby express shuttles.
+- Transit Priority Lane: Coordinate with city traffic management to reserve Outer Ring Road Lane 1 exclusively for event shuttles and emergency vehicles.
+
+4. PARKING & TRAFFIC INCIDENT DIRECTIVES
+- Lot Full Protocol: When Lot A reaches 92% capacity, activate VMS (Variable Message Sign) 500 meters ahead directing vehicles to Lot B or Lot C.
+- Rideshare Drop-off Management: Restrict rideshare drop-offs to Zone R (East Gate). Prohibit rideshare stopping along Main Boulevard to prevent multi-vehicle gridlock.

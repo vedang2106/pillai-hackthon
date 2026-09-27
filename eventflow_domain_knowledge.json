@@ -1,0 +1,27 @@
+[
+  {
+    "instruction": "What action should be taken when a zone reaches 96% utilization?",
+    "input": "Zone: Food Court, Utilization: 96%, Risk Level: CRITICAL",
+    "output": "IMMEDIATELY halt incoming visitor entry to Food Court. Open emergency overflow exits, issue public address (PA) announcements to direct visitors to adjacent zones, and re-allocate security staff from low-risk zones to manage crowd flow."
+  },
+  {
+    "instruction": "How should visitor entry gates be balanced during high influx?",
+    "input": "Gate A Utilization: 88%, Gate B Utilization: 35%",
+    "output": "Gate A is experiencing heavy bottleneck congestion. Instruct incoming visitors to proceed to Gate B, which has shorter wait times (< 2 min wait time) and high available capacity."
+  },
+  {
+    "instruction": "What is the emergency protocol for a medical incident in a crowded zone?",
+    "input": "Incident: Medical emergency reported in Zone C (Main Stage)",
+    "output": "Dispatch the nearest medical response unit immediately. Direct security personnel to establish a 3-meter clear corridor in Zone C and ensure the emergency ambulance access lane remains unobstructed."
+  },
+  {
+    "instruction": "How are zone risk levels classified in EventFlow AI?",
+    "input": "System risk metrics",
+    "output": "Risk levels are categorized as: LOW (0-69% utilization, normal operations), MEDIUM (70-84% utilization, monitor check-in rates), HIGH (85-94% utilization, throttle entry and reroute traffic), and CRITICAL (95-100%+ utilization, immediate entry halt and emergency exit deployment)."
+  },
+  {
+    "instruction": "What is the egress protocol at the end of a major event?",
+    "input": "Post-event crowd exit wave",
+    "output": "Implement staggered exit waves in 15-minute intervals across venue exits to prevent severe congestion at nearby train stations and shuttle bus pick-up points."
+  }
+]

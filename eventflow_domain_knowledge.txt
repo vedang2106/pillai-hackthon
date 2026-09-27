@@ -1,0 +1,58 @@
+# EventFlow AI: Domain Knowledge & Safety Protocols for Crowd Management and Event Operations
+
+## 1. Executive Overview & System Purpose
+EventFlow AI is an intelligent event management and real-time crowd safety platform. It continuously monitors live attendee counts, zone utilization rates, gate throughputs, and incident reports across venue zones and surrounding city transport hubs. The goal of EventFlow AI is to prevent crowd stampedes, eliminate bottlenecks, optimize visitor flow, and provide deterministic, actionable safety directives to event organizers and security staff.
+
+---
+
+## 2. Zone Risk Levels and Capacity Thresholds
+
+### Utilization Categories:
+- **LOW Risk (0% - 69% Utilization)**:
+  - Status: Optimal operating condition.
+  - Action: Maintain standard monitoring. No intervention required.
+- **MEDIUM Risk (70% - 84% Utilization)**:
+  - Status: Increased density observed.
+  - Action: Monitor check-in rates every 5 minutes. Prepare secondary entry/exit gates for potential deployment.
+- **HIGH Risk (85% - 94% Utilization)**:
+  - Status: Approaching safe capacity limit. High risk of localized bottlenecks.
+  - Action: Throttle main entry gates. Re-route incoming visitors toward adjacent low-occupancy zones. Deploy security staff to monitor crowd movement.
+- **CRITICAL Risk (95% - 100%+ Utilization)**:
+  - Status: Severe congestion. Extreme risk of crowd crush or stampede.
+  - Action: IMMEDIATELY halt incoming visitor entry to the zone. Open all emergency overflow exits. Make live public address (PA) announcements. Re-allocate 50% of staff from LOW-risk zones to the CRITICAL zone.
+
+---
+
+## 3. Incident Classification & Emergency Dispatch Protocols
+
+### Category 1: Crowd Congestion & Bottlenecks
+- **Trigger**: Zone utilization > 90% or entry queue wait time > 15 minutes.
+- **Directive**: Temporarily hold entry queues at outer perimeter. Open auxiliary gates. Issue mobile app alerts advising visitors to visit less crowded attractions/zones.
+
+### Category 2: Medical Emergency
+- **Trigger**: First-aid request or medical collapse reported in a zone.
+- **Directive**: Dispatch nearest medical response team. Create a 3-meter clear corridor by directing security staff to hold surrounding crowd movement. Keep main medical transport exit clear.
+
+### Category 3: Physical Hazard / Infrastructure Failure
+- **Trigger**: Barricade breach, stage structure instability, or power outage.
+- **Directive**: Evacuate adjacent 20-meter perimeter immediately. Divert all pedestrian traffic away from the hazard sector. Notify structural engineering and quick-response units.
+
+### Category 4: Security & Access Threat
+- **Trigger**: Unauthorized perimeter breach or aggressive behavior.
+- **Directive**: Lock down affected sector gates. Deploy rapid response security team. Divert visitor traffic to designated safe zones.
+
+---
+
+## 4. Gate Allocation & Visitor Rerouting Logic
+
+- **Gate Balance Protocol**: If Gate A capacity utilization exceeds Gate B utilization by more than 30%, automatically issue visitor navigation guidance: "Proceed to Gate B for faster entry with < 2 min wait time."
+- **Egress Wave Optimization**: At event conclusion, staggering exit waves in 15-minute intervals prevents metro station and shuttle bus overloading.
+
+---
+
+## 5. Standard Operating Procedures (SOP) for Event Organizers
+
+1. **Continuous Surveillance**: Monitor live zone density maps on the EventFlow AI dashboard.
+2. **Proactive Intervention**: Never wait for a zone to reach 100% capacity; execute rerouting actions at 85% HIGH risk.
+3. **Multi-Agency Coordination**: Share real-time risk scores with local law enforcement, medical personnel, and city transit authorities.
+4. **Post-Incident Logging**: Log all incident response times and crowd feedback to continuously evaluate and improve safety models.

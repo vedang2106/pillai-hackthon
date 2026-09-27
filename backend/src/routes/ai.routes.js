@@ -14,6 +14,7 @@ import {
   postLlmAssistantQuery,
   getMlAnalyticsController,
   postVisitorRoute,
+  getLiveWeatherController,
 } from '../controllers/ai.controller.js';
 
 const router = Router();
@@ -138,4 +139,13 @@ router.post(
   })
 );
 
+// 13. Live Weather API (Open-Meteo)
+router.get(
+  '/weather/live',
+  asyncHandler(async (req, res) => {
+    await getLiveWeatherController(req, res);
+  })
+);
+
 export default router;
+

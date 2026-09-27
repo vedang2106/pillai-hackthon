@@ -10,7 +10,6 @@ import MlAnalyticsView from '../components/ai/MlAnalyticsView';
 import CrowdRippleCard from '../components/ai/CrowdRippleCard';
 import RecommendationsPanel from '../components/ai/RecommendationsPanel';
 import WhatIfSimulatorCard from '../components/ai/WhatIfSimulatorCard';
-import ExitWaveCard from '../components/ai/ExitWaveCard';
 
 export default function GovernmentDashboard() {
   const navigate = useNavigate();
@@ -334,10 +333,6 @@ export default function GovernmentDashboard() {
           <RecommendationsPanel eventId={sampleEventId} role="GOVERNMENT" />
         </div>
 
-        {/* Grounded AI Assistant */}
-        <div className="max-w-xl">
-          <LlmAssistantWidget eventId={sampleEventId} />
-        </div>
       </div>
     </div>
   );

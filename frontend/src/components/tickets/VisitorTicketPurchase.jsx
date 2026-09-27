@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { ticketsApi } from '../../services/api';
 import QrCodeSvg from '../common/QrCodeSvg';
-import { Ticket, CheckCircle2, AlertCircle, ShieldCheck, MapPin, Download, X, QrCode } from 'lucide-react';
+import { Ticket, CheckCircle2, AlertCircle, ShieldCheck, MapPin, Download, X, QrCode, ChevronLeft, ChevronRight, Layers } from 'lucide-react';
+import io from 'socket.io-client';
 
 export default function VisitorTicketPurchase({ event }) {
   const [tiers, setTiers] = useState([]);
@@ -12,10 +13,15 @@ export default function VisitorTicketPurchase({ event }) {
   const [quantity, setQuantity] = useState(1);
   const [purchasing, setPurchasing] = useState(false);
   const [error, setError] = useState('');
-  const [purchasedTickets, setPurchasedTickets] = useState([]);
-  const [activeTicketModal, setActiveTicketModal] = useState(null);
 
-  useEffect(() => {
+  // All purchased tickets history
+  const [purchasedTickets, setPurchasedTickets] = useState([]);
+
+  // Modal State for viewing single or multi-ticket batches
+  const [modalBatch, setModalBatch] = useState(null); // Array of tickets in batch
+  const [modalIndex, setModalIndex] = useState(0); // Current index in batch
+
+  function fetchTiers() {
     if (!event?._id) return;
     setLoading(true);
     ticketsApi
@@ -23,10 +29,45 @@ export default function VisitorTicketPurchase({ event }) {
       .then(({ data }) => {
         const list = data.tiers || [];
         setTiers(list);
-        if (list.length > 0) setSelectedTier(list[0]);
+        if (list.length > 0) {
+          setSelectedTier((prev) => {
+            if (!prev) return list[0];
+            const found = list.find((t) => t.name === prev.name);
+            return found || list[0];
+          });
+        }
       })
       .catch(() => setTiers([]))
       .finally(() => setLoading(false));
+  }
+
+  // Initial load & Socket.IO listener for live dynamic tier updates from Organizer
+  useEffect(() => {
+    fetchTiers();
+
+    if (!event?._id) return;
+
+    const socket = io(import.meta.env.VITE_API_URL || '', {
+      transports: ['websocket', 'polling'],
+    });
+
+    socket.emit('join:event', event._id);
+
+    // Dynamic update when organizer adds/edits custom tiers
+    socket.on('ticketTiers:update', (updatedTiers) => {
+      setTiers(updatedTiers || []);
+      if (updatedTiers && updatedTiers.length > 0) {
+        setSelectedTier((prev) => {
+          if (!prev) return updatedTiers[0];
+          const found = updatedTiers.find((t) => t.name === prev.name);
+          return found || updatedTiers[0];
+        });
+      }
+    });
+
+    return () => {
+      socket.disconnect();
+    };
   }, [event?._id]);
 
   async function handlePurchase(e) {
@@ -48,8 +89,15 @@ export default function VisitorTicketPurchase({ event }) {
         quantity: Number(quantity) || 1,
       });
 
-      setPurchasedTickets((prev) => [...data.tickets, ...prev]);
-      setActiveTicketModal(data.tickets[0]);
+      const newTickets = data.tickets || [];
+      setPurchasedTickets((prev) => [...newTickets, ...prev]);
+
+      // Open Modal with full batch of generated tickets
+      setModalBatch(newTickets);
+      setModalIndex(0);
+
+      // Refresh dynamic slot counts
+      fetchTiers();
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to purchase ticket.');
     } finally {
@@ -65,16 +113,18 @@ export default function VisitorTicketPurchase({ event }) {
     );
   }
 
+  const activeTicketModal = modalBatch ? modalBatch[modalIndex] : null;
+
   return (
     <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm">
       <div className="flex items-center justify-between mb-6 pb-4 border-b border-slate-100">
         <div>
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-orange-50 text-brand-orange text-xs font-bold border border-orange-200 mb-1">
-            <Ticket className="w-3.5 h-3.5" /> Event Ticketing & Pass Access
+            <Ticket className="w-3.5 h-3.5" /> Dynamic Event Ticketing & Pass Access
           </div>
           <h2 className="text-xl font-extrabold text-slate-900">Buy Entry Tickets & Pass</h2>
           <p className="text-slate-500 text-xs mt-0.5">
-            Select ticket tier with assigned gate entry. Instant unique QR Code ticket generation.
+            Select ticket tier with assigned gate entry. Real-time dynamic slots & unique QR Code generation.
           </p>
         </div>
       </div>
@@ -85,7 +135,7 @@ export default function VisitorTicketPurchase({ event }) {
         </div>
       )}
 
-      {/* Tier Selection Grid */}
+      {/* Dynamic Tier Selection Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         {tiers.map((tier) => {
           const isSelected = selectedTier?.name === tier.name;
@@ -177,6 +227,7 @@ export default function VisitorTicketPurchase({ event }) {
                 <option value={2}>2 Tickets</option>
                 <option value={3}>3 Tickets</option>
                 <option value={4}>4 Tickets</option>
+                <option value={5}>5 Tickets</option>
               </select>
             </div>
           </div>
@@ -187,23 +238,28 @@ export default function VisitorTicketPurchase({ event }) {
             className="w-full bg-brand-orange hover:bg-orange-600 text-white font-extrabold py-3 rounded-xl shadow-md transition-all flex items-center justify-center gap-2 text-sm disabled:opacity-60"
           >
             <QrCode className="w-4 h-4" />
-            {purchasing ? 'Generating QR Code Ticket...' : `Confirm & Pay ₹${(selectedTier.price * quantity).toLocaleString()}`}
+            {purchasing
+              ? `Generating ${quantity} Digital Ticket Pass${quantity > 1 ? 'es' : ''}...`
+              : `Confirm & Pay ₹${(selectedTier.price * quantity).toLocaleString()} (${quantity} Ticket${quantity > 1 ? 's' : ''})`}
           </button>
         </form>
       )}
 
-      {/* Purchased Tickets List */}
+      {/* Purchased Tickets History List */}
       {purchasedTickets.length > 0 && (
         <div className="mt-6 pt-6 border-t border-slate-100">
           <h4 className="text-sm font-bold text-slate-900 mb-3 flex items-center gap-1.5">
             <CheckCircle2 className="w-4 h-4 text-emerald-600" /> Your Active Digital Passes ({purchasedTickets.length})
           </h4>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-            {purchasedTickets.map((t) => (
+            {purchasedTickets.map((t, idx) => (
               <button
-                key={t.ticketId}
+                key={t.ticketId || idx}
                 type="button"
-                onClick={() => setActiveTicketModal(t)}
+                onClick={() => {
+                  setModalBatch([t]);
+                  setModalIndex(0);
+                }}
                 className="bg-emerald-50/50 border border-emerald-200 hover:border-emerald-400 p-3.5 rounded-2xl text-left transition-all shadow-sm flex items-center justify-between group"
               >
                 <div>
@@ -221,27 +277,59 @@ export default function VisitorTicketPurchase({ event }) {
         </div>
       )}
 
-      {/* Interactive Digital Ticket Modal with QR Code */}
-      {activeTicketModal && (
+      {/* Interactive Digital Ticket Modal supporting Multi-Ticket Carousel / Batch */}
+      {activeTicketModal && modalBatch && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white border border-slate-200 rounded-3xl max-w-md w-full p-6 shadow-2xl relative animate-in fade-in zoom-in duration-200">
             <button
-              onClick={() => setActiveTicketModal(null)}
+              onClick={() => {
+                setModalBatch(null);
+                setModalIndex(0);
+              }}
               className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-700 rounded-full hover:bg-slate-100 transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
 
             <div className="text-center">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 text-xs font-extrabold border border-emerald-300 mb-3">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 text-xs font-extrabold border border-emerald-300 mb-2">
                 <ShieldCheck className="w-4 h-4 text-emerald-600" /> OFFICIAL DIGITAL EVENT PASS
               </div>
-              <h3 className="text-xl font-extrabold text-slate-900">{activeTicketModal.eventName}</h3>
+
+              {/* Multi-Ticket Navigation Tabs / Counter */}
+              {modalBatch.length > 1 && (
+                <div className="my-3 bg-slate-100 p-1.5 rounded-2xl flex items-center justify-between border border-slate-200">
+                  <button
+                    type="button"
+                    disabled={modalIndex === 0}
+                    onClick={() => setModalIndex((prev) => Math.max(0, prev - 1))}
+                    className="p-1.5 rounded-xl text-slate-600 hover:bg-white hover:shadow-sm disabled:opacity-30 transition-all"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+
+                  <div className="flex items-center gap-1.5 text-xs font-extrabold text-slate-800">
+                    <Layers className="w-4 h-4 text-brand-orange" />
+                    <span>Ticket Pass {modalIndex + 1} of {modalBatch.length}</span>
+                  </div>
+
+                  <button
+                    type="button"
+                    disabled={modalIndex === modalBatch.length - 1}
+                    onClick={() => setModalIndex((prev) => Math.min(modalBatch.length - 1, prev + 1))}
+                    className="p-1.5 rounded-xl text-slate-600 hover:bg-white hover:shadow-sm disabled:opacity-30 transition-all"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
+
+              <h3 className="text-xl font-extrabold text-slate-900 mt-1">{activeTicketModal.eventName}</h3>
               <p className="text-xs text-slate-500 mt-0.5">Present this QR Code to Security Guard at Entrance</p>
 
               {/* QR Code */}
-              <div className="my-5 flex justify-center">
-                <QrCodeSvg value={activeTicketModal.qrCodeData} size={180} />
+              <div className="my-4 flex justify-center">
+                <QrCodeSvg value={activeTicketModal.qrCodeData} size={170} />
               </div>
 
               {/* Ticket Details */}
@@ -266,15 +354,36 @@ export default function VisitorTicketPurchase({ event }) {
                 </div>
               </div>
 
-              <div className="mt-5 flex gap-2">
+              {/* Quick Dots Indicator for Multi-Tickets */}
+              {modalBatch.length > 1 && (
+                <div className="flex items-center justify-center gap-1.5 mt-3">
+                  {modalBatch.map((_, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => setModalIndex(i)}
+                      className={`h-2 rounded-full transition-all ${
+                        i === modalIndex ? 'w-6 bg-brand-orange' : 'w-2 bg-slate-300'
+                      }`}
+                    />
+                  ))}
+                </div>
+              )}
+
+              <div className="mt-4 flex gap-2">
                 <button
+                  type="button"
                   onClick={() => window.print()}
                   className="flex-1 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl shadow-sm flex items-center justify-center gap-1.5"
                 >
-                  <Download className="w-4 h-4" /> Download / Print Ticket
+                  <Download className="w-4 h-4" /> Download / Print Pass ({modalIndex + 1}/{modalBatch.length})
                 </button>
                 <button
-                  onClick={() => setActiveTicketModal(null)}
+                  type="button"
+                  onClick={() => {
+                    setModalBatch(null);
+                    setModalIndex(0);
+                  }}
                   className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl"
                 >
                   Close

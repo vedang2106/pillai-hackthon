@@ -10,19 +10,29 @@ import eventsRoutes from './routes/events.routes.js';
 import zonesRoutes from './routes/zones.routes.js';
 import aiRoutes from './routes/ai.routes.js';
 import ticketsRoutes from './routes/tickets.routes.js';
+import socialRoutes from './routes/social.routes.js';
 
 const app = express();
 const server = http.createServer(app);
-const clientOrigin = process.env.CLIENT_ORIGIN || 'http://localhost:5173';
+const clientOrigin = process.env.CLIENT_ORIGIN || '*';
+
+const corsOptions = {
+  origin: clientOrigin === '*' ? true : clientOrigin.split(','),
+  methods: ['GET', 'POST', 'PATCH', 'DELETE', 'PUT', 'OPTIONS'],
+  credentials: true,
+};
 
 const io = new Server(server, {
-  cors: { origin: clientOrigin, methods: ['GET', 'POST', 'PATCH', 'DELETE'] },
+  cors: {
+    origin: clientOrigin === '*' ? '*' : clientOrigin.split(','),
+    methods: ['GET', 'POST', 'PATCH', 'DELETE'],
+  },
 });
 
 app.set('io', io);
 registerSocketHandlers(io);
 
-app.use(cors({ origin: clientOrigin }));
+app.use(cors(corsOptions));
 app.use(express.json());
 
 app.get('/api/health', (_req, res) => {
@@ -40,6 +50,7 @@ app.use('/api/events', aiRoutes);
 app.use('/api/events', eventsRoutes);
 app.use('/api/zones', zonesRoutes);
 app.use('/api/tickets', ticketsRoutes);
+app.use('/api/social', socialRoutes);
 
 app.use((err, _req, res, _next) => {
   console.error(err);
@@ -74,3 +85,6 @@ async function start() {
 }
 
 start();
+
+// Social signals router mounted
+

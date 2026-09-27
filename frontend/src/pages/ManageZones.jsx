@@ -5,6 +5,7 @@ import { useZones } from '../hooks/useZones';
 import { zonesApi, eventsApi } from '../services/api';
 import { useEffect } from 'react';
 import OrganizerTicketTierManager from '../components/tickets/OrganizerTicketTierManager';
+import OrganizerGateManager from '../components/dashboard/OrganizerGateManager';
 
 const ZONE_TYPES = ['GATE', 'VENUE', 'STAGE', 'FOOD', 'PARKING', 'RAIL', 'BUS', 'METRO', 'HOTEL', 'ROAD', 'OTHER'];
 
@@ -100,6 +101,11 @@ export default function ManageZones() {
           </li>
         )}
       </ul>
+
+      {/* Danger Zone & Gate Reroute Management */}
+      <div className="mt-10">
+        <OrganizerGateManager eventId={eventId} zones={zones} onRefresh={refresh} />
+      </div>
 
       {/* Ticket Tier & Zone Entry Configuration Section */}
       <div className="mt-10">

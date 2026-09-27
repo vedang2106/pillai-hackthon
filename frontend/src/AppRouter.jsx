@@ -26,6 +26,8 @@ export default function AppRouter() {
             <Route path="/events" element={<EventSelection />} />
             <Route path="/events/new" element={<CreateEvent />} />
             <Route path="/events/:eventId" element={<OrganizerOverview />} />
+            <Route path="/events/:eventId/digital-twin" element={<OrganizerOverview />} />
+            <Route path="/events/:eventId/simulator" element={<OrganizerOverview />} />
             <Route path="/events/:eventId/zones" element={<ManageZones />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />

@@ -3,10 +3,14 @@ import { aiApi } from '../../services/api';
 import SourceBadge from '../common/SourceBadge';
 import { Lightbulb, UserCheck, ShieldCheck, Building } from 'lucide-react';
 
-export default function RecommendationsPanel({ eventId, role = 'ORGANIZER' }) {
+export default function RecommendationsPanel({ eventId, role = 'ORGANIZER', showRoleTabs = false }) {
   const [data, setData] = useState(null);
   const [activeTab, setActiveTab] = useState(role);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    setActiveTab(role);
+  }, [role]);
 
   useEffect(() => {
     if (!eventId) return;
@@ -39,29 +43,31 @@ export default function RecommendationsPanel({ eventId, role = 'ORGANIZER' }) {
         <SourceBadge source="AI PREDICTION" />
       </div>
 
-      {/* Role Tabs */}
-      <div className="flex items-center gap-2 mb-4 border-b border-slate-200 pb-2">
-        {[
-          { key: 'ORGANIZER', label: 'Organizer', icon: Building },
-          { key: 'GOVERNMENT', label: 'Government', icon: ShieldCheck },
-          { key: 'VISITOR', label: 'Visitor', icon: UserCheck },
-        ].map((tab) => {
-          const Icon = tab.icon;
-          return (
-            <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-extrabold flex items-center gap-1.5 transition-all ${
-                activeTab === tab.key
-                  ? 'bg-slate-900 text-white shadow-sm'
-                  : 'text-slate-600 hover:bg-slate-100'
-              }`}
-            >
-              <Icon className="w-3.5 h-3.5" /> {tab.label}
-            </button>
-          );
-        })}
-      </div>
+      {/* Role Tabs - Only shown if explicitly enabled */}
+      {showRoleTabs && (
+        <div className="flex items-center gap-2 mb-4 border-b border-slate-200 pb-2">
+          {[
+            { key: 'ORGANIZER', label: 'Organizer', icon: Building },
+            { key: 'GOVERNMENT', label: 'Government', icon: ShieldCheck },
+            { key: 'VISITOR', label: 'Visitor', icon: UserCheck },
+          ].map((tab) => {
+            const Icon = tab.icon;
+            return (
+              <button
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-extrabold flex items-center gap-1.5 transition-all ${
+                  activeTab === tab.key
+                    ? 'bg-slate-900 text-white shadow-sm'
+                    : 'text-slate-600 hover:bg-slate-100'
+                }`}
+              >
+                <Icon className="w-3.5 h-3.5" /> {tab.label}
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       <div className="space-y-3">
         {recsForRole.length === 0 ? (

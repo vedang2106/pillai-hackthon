@@ -48,22 +48,19 @@ def calculate_zone_risk(zone_data: Dict[str, Any]) -> Dict[str, Any]:
         
     risk_score = round(min(max(raw_score, 0), 100), 1)
     
-    # Determine risk level & reason
-    if predicted_util >= 0.95 or current_util >= 0.95 or (current_util >= 0.85 and traffic == "HEAVY"):
+    # Determine risk level & reason based on exact thresholds
+    if predicted_util > 0.85 or current_util > 0.85:
         level = "CRITICAL"
-        if mins_to_threshold is not None and mins_to_threshold <= 15:
-            reason = f"Predicted occupancy is approaching critical threshold ({int(predicted_util*100)}%) within ~{mins_to_threshold} minutes."
-        else:
-            reason = f"Current occupancy has reached critical operating capacity ({int(current_util*100)}%)."
-    elif predicted_util >= 0.80 or current_util >= 0.85:
+        reason = f"🚨 EXTREME DANGER (>85%): Current occupancy reached {int(current_util*100)}% of max capacity threshold."
+    elif predicted_util >= 0.70 or current_util >= 0.70:
         level = "HIGH"
-        reason = f"Predicted occupancy ({int(predicted_util*100)}%) is approaching operating capacity threshold."
-    elif predicted_util >= 0.65 or current_util >= 0.70 or traffic == "HEAVY":
+        reason = f"⚠️ HIGH CONGESTION (70-85%): Occupancy ({int(current_util*100)}%) has entered high congestion zone."
+    elif predicted_util >= 0.40 or current_util >= 0.40:
         level = "MEDIUM"
-        reason = f"Zone experiencing elevated crowd density or slow traffic flow ({int(current_util*100)}% utilization)."
+        reason = f"🟡 MODERATE (40-70%): Zone experiencing steady crowd inflow ({int(current_util*100)}% utilization)."
     else:
         level = "LOW"
-        reason = "Operating within normal capacity thresholds."
+        reason = f"🟢 NORMAL (0-40%): Zone operating smoothly within safe thresholds ({int(current_util*100)}% utilization)."
 
     return {
         "zoneId": str(zone_id),

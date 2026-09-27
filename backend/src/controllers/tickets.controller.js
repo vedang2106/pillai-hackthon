@@ -84,6 +84,11 @@ export async function saveTicketTiers(req, res) {
   }));
 
   await event.save();
+
+  const io = req.app.get('io');
+  io?.to(`event:${eventId}`).emit('ticketTiers:update', event.ticketTiers);
+  io?.emit('ticketTiers:update', event.ticketTiers);
+
   res.json({ message: 'Ticket tiers updated successfully', tiers: event.ticketTiers });
 }
 
@@ -150,6 +155,10 @@ export async function purchaseTicket(req, res) {
   tier.soldQuantity += quantity;
   await event.save();
 
+  const io = req.app.get('io');
+  io?.to(`event:${eventId}`).emit('ticketTiers:update', event.ticketTiers);
+  io?.emit('ticketTiers:update', event.ticketTiers);
+
   res.status(201).json({
     message: 'Ticket purchased successfully!',
     tickets: createdTickets,
@@ -213,14 +222,14 @@ export async function scanTicket(req, res) {
       const util = Math.min(100, Math.round((updatedZone.currentOccupancy / updatedZone.capacity) * 100));
       updatedZone.utilizationPercent = util;
 
-      if (util >= 95) {
-        dangerLevel = 'CRITICAL'; // EXTREME DANGER
-      } else if (util >= 80) {
-        dangerLevel = 'HIGH';
-      } else if (util >= 60) {
-        dangerLevel = 'MEDIUM';
+      if (util > 85) {
+        dangerLevel = 'CRITICAL'; // EXTREME DANGER (>85%)
+      } else if (util >= 70) {
+        dangerLevel = 'HIGH'; // HIGH CONGESTION (70-85%)
+      } else if (util >= 40) {
+        dangerLevel = 'MEDIUM'; // MODERATE (40-70%)
       } else {
-        dangerLevel = 'LOW';
+        dangerLevel = 'LOW'; // NORMAL (0-40%)
       }
 
       updatedZone.crowdLevel = dangerLevel;
@@ -231,21 +240,63 @@ export async function scanTicket(req, res) {
       // Emit real-time Socket.IO zone update
       const io = req.app.get('io');
       io?.to(`event:${ticket.eventId}`).emit('zone:update', updatedZone);
+      io?.to(`event:${ticket.eventId}`).emit('zone:updated', { zoneId: updatedZone._id, eventId: ticket.eventId });
+      io?.to(`event:${ticket.eventId}`).emit('zones:updated', { eventId: ticket.eventId });
       io?.emit('zone:update', updatedZone);
 
-      // Create real-time Alert if high/critical
+      let newAlert = null;
       if (dangerLevel === 'HIGH' || dangerLevel === 'CRITICAL') {
-        const newAlert = await Alert.create({
+        const isExtreme = dangerLevel === 'CRITICAL';
+        const alertTitle = isExtreme
+          ? `🚨 EXTREME DANGER: ${updatedZone.name.toUpperCase()} (>85%)`
+          : `⚠️ HIGH CONGESTION: ${updatedZone.name.toUpperCase()} (70-85%)`;
+
+        const alertMessage = isExtreme
+          ? `CRITICAL OVERCROWDING ALERT! ${updatedZone.name} reached ${updatedZone.currentOccupancy}/${updatedZone.capacity} (${util}%). Immediate crowd redirection required!`
+          : `HIGH CROWD WARNING! ${updatedZone.name} reached ${updatedZone.currentOccupancy}/${updatedZone.capacity} (${util}%). Monitor gate flow.`;
+
+        newAlert = await Alert.create({
           eventId: ticket.eventId,
           zoneId: updatedZone._id,
-          title: `🚨 ${dangerLevel === 'CRITICAL' ? 'EXTREME DANGER' : 'HIGH CROWD'} AT ${updatedZone.name}`,
-          message: `Gate occupancy reached ${updatedZone.currentOccupancy}/${updatedZone.capacity} (${util}%). Redirect incoming crowd immediately!`,
+          title: alertTitle,
+          message: alertMessage,
           severity: dangerLevel,
-          targetAudience: 'ALL',
+          targetAudience: 'ORGANIZER',
           source: 'GUARD_SCANNER',
         });
+
+        io?.to(`event:${ticket.eventId}`).emit('alert:new', newAlert);
+        io?.to(`event:${ticket.eventId}`).emit('organizer:alert', newAlert);
         io?.emit('alert:new', newAlert);
       }
+
+      return res.json({
+        success: true,
+        message: `✅ TICKET VALIDATED: CHECK IN SUCCESSFUL`,
+        ticket: {
+          ticketId: ticket.ticketId,
+          visitorName: ticket.visitorName,
+          tierName: ticket.tierName,
+          entryZoneName: ticket.entryZoneName,
+          checkedInAt: ticket.checkedInAt,
+        },
+        alert: newAlert,
+        zoneStatus: {
+          zoneName: updatedZone.name,
+          currentOccupancy: updatedZone.currentOccupancy,
+          capacity: updatedZone.capacity,
+          utilizationPercent: updatedZone.utilizationPercent,
+          riskLevel: updatedZone.riskLevel,
+          dangerStatus:
+            dangerLevel === 'CRITICAL'
+              ? '🚨 EXTREME DANGER (>85%)'
+              : dangerLevel === 'HIGH'
+              ? '⚠️ HIGH CONGESTION (70-85%)'
+              : dangerLevel === 'MEDIUM'
+              ? '🟡 MODERATE (40-70%)'
+              : '🟢 NORMAL (0-40%)',
+        },
+      });
     }
   }
 
@@ -259,15 +310,7 @@ export async function scanTicket(req, res) {
       entryZoneName: ticket.entryZoneName,
       checkedInAt: ticket.checkedInAt,
     },
-    zoneStatus: updatedZone
-      ? {
-          zoneName: updatedZone.name,
-          currentOccupancy: updatedZone.currentOccupancy,
-          capacity: updatedZone.capacity,
-          utilizationPercent: updatedZone.utilizationPercent,
-          riskLevel: updatedZone.riskLevel,
-          dangerStatus: dangerLevel === 'CRITICAL' ? '🚨 EXTREME DANGER' : dangerLevel === 'HIGH' ? '⚠️ HIGH CONGESTION' : 'NORMAL',
-        }
-      : null,
+    alert: null,
+    zoneStatus: null,
   });
 }

@@ -55,6 +55,7 @@ export const aiApi = {
   queryAssistant: (query, eventId) => api.post('/api/ai/assistant/query', { query, eventId }),
   getMlAnalytics: () => api.get('/api/ai/analytics'),
   calculateVisitorRoute: (body) => api.post('/api/ai/visitor-route', body),
+  getLiveWeather: (lat, lon) => api.get('/api/ai/weather/live', { params: { lat, lon } }),
 };
 
 export const healthApi = {

@@ -11,6 +11,7 @@ import {
   queryLlmAssistant,
   getMlAnalytics,
   calculateVisitorRoute,
+  getLiveWeather,
 } from '../services/aiService.js';
 import { Alert } from '../models/Alert.js';
 
@@ -106,3 +107,10 @@ export async function postVisitorRoute(req, res) {
   const result = await calculateVisitorRoute(origin, destination, vehicleType, eventId);
   res.json(result);
 }
+
+export async function getLiveWeatherController(req, res) {
+  const { lat, lon } = req.query;
+  const result = await getLiveWeather(lat ? parseFloat(lat) : 19.0330, lon ? parseFloat(lon) : 73.0297);
+  res.json(result);
+}
+
